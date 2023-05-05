@@ -64,6 +64,10 @@ class Wall(GameObject):
     def __init__(self, in_surface, x, y, in_size: int, in_color=(0, 150, 0)):
         super().__init__(in_surface, x * in_size, y * in_size, in_size, in_color)
 
+class finish(GameObject):
+    def __init__(self, in_surface, x, y, in_size: int, in_color=(0, 150, 0)):
+        super().__init__(in_surface, x * in_size, y * in_size, in_size, in_color)
+
 
 class GameRenderer:
     def __init__(self, in_width: int, in_height: int):
@@ -74,9 +78,10 @@ class GameRenderer:
         pygame.display.set_caption('Pacman')
         self._clock = pygame.time.Clock()
         self._done = False
+        self._won = False
         self._game_objects = []
         self._walls = []
-        self._cookies = []
+        self._finish = []
         self._ghosts = []
         self._hero: Hero = None
 
@@ -98,13 +103,13 @@ class GameRenderer:
     def add_game_object(self, obj: GameObject):
         self._game_objects.append(obj)
 
-    def add_cookie(self, obj: GameObject):
-        self._game_objects.append(obj)
-        self._cookies.append(obj)
-
     def add_ghost(self, obj: GameObject):
         self._game_objects.append(obj)
         self._ghosts.append(obj)
+
+    def add_finish(self, obj: GameObject):
+        self._game_objects.append(obj)
+        self._finish.append(obj)
 
     def set_won(self):
         self._won = True
@@ -129,11 +134,11 @@ class GameRenderer:
     def get_walls(self):
         return self._walls
 
-    def get_cookies(self):
-        return self._cookies
-
     def get_ghosts(self):
         return self._ghosts
+
+    def get_finish(self):
+        return self._finish
 
     def get_game_objects(self):
         return self._game_objects
@@ -232,7 +237,6 @@ class Hero(MovableObject):
         if self.collides_with_wall((self.x, self.y)):
             self.set_position(self.last_non_colliding_position[0], self.last_non_colliding_position[1])
 
-        self.handle_cookie_pickup()
         self.handle_ghosts()
 
     def automatic_move(self, in_direction: Direction):
@@ -246,14 +250,15 @@ class Hero(MovableObject):
         else:
             self.current_direction = self.last_working_direction
 
-    def handle_cookie_pickup(self):
+    def handle_finish(self):
         collision_rect = pygame.Rect(self.x, self.y, self._size, self._size)
-        cookies = self._renderer.get_cookies()
+        finish = self._renderer.get_finish()
         game_objects = self._renderer.get_game_objects()
-        for cookie in cookies:
-            collides = collision_rect.colliderect(cookie.get_shape())
-            if collides and cookie in game_objects:
-                game_objects.remove(cookie)
+        for finis in finish:
+            collides = collision_rect.colliderect(finish.get_shape())
+            if collides and finis in game_objects:
+                self._renderer.kill_pacman()
+
 
     def handle_ghosts(self):
         collision_rect = pygame.Rect(self.x, self.y, self._size, self._size)
@@ -270,7 +275,7 @@ class Hero(MovableObject):
 
 
 class Ghost(MovableObject):
-    def __init__(self, in_surface, x, y, in_size: int, in_game_controller, in_color=(255, 0, 0)):
+    def __init__(self, in_surface, x, y, in_size: int, in_game_controller, in_color=(0, 255, 0)):
         super().__init__(in_surface, x, y, in_size, in_color, False)
         self.game_controller = in_game_controller
 
@@ -307,12 +312,6 @@ class Ghost(MovableObject):
         elif in_direction == Direction.RIGHT:
             self.set_position(self.x + 1, self.y)
 
-
-class Cookie(GameObject):
-    def __init__(self, in_surface, x, y):
-        super().__init__(in_surface, x, y, 4, (255, 255, 0), True)
-
-
 class Pathfinder:
     def __init__(self, in_arr):
         cost = np.array(in_arr, dtype=np.bool_).tolist()
@@ -336,9 +335,9 @@ class PacmanGameController:
             "XXXXXX XXXXX XX XXXXX XXXXXX",
             "XXXXXX XX          XX XXXXXX",
             "XXXXXX XX XXXXXXXX XX XXXXXX",
-            "XXXXXX XX X   G  X XX XXXXXX",
-            "          X G    X          ",
-            "XXXXXX XX X   G  X XX XXXXXX",
+            "XXXXXX XX X      X XX XXXXXX",
+            "             XX             ",
+            "XXXXXX XX X      X XX XXXXXX",
             "XXXXXX XX XXXXXXXX XX XXXXXX",
             "XXXXXX XX          XX XXXXXX",
             "XXXXXX XX XXXXXXXX XX XXXXXX",
@@ -349,19 +348,16 @@ class PacmanGameController:
             "XXX XX XX XXXXXXXX XX XX XXX",
             "X      XX    XX    XX      X",
             "X XXXXXXXXXX XX XXXXXXXXXX X",
-            "X                          X",
+            "X                         FX",
             "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
         ]
 
         self.numpy_maze = []
-        self.cookie_spaces = []
         self.reachable_spaces = []
         self.ghost_spawns = []
+        self.finish_spawns = []
         self.ghost_colors = [
             (255, 184, 255),
-            (255, 0, 20),
-            (0, 255, 255),
-            (255, 184, 82)
         ]
         self.size = (0, 0)
         self.convert_maze_to_numpy()
@@ -381,14 +377,14 @@ class PacmanGameController:
             self.size = (len(row), x + 1)
             binary_row = []
             for y, column in enumerate(row):
+                if column == "F":
+                    self.finish_spawns.append((y, x))
                 if column == "G":
                     self.ghost_spawns.append((y, x))
-
                 if column == "X":
                     binary_row.append(0)
                 else:
                     binary_row.append(1)
-                    self.cookie_spaces.append((y, x))
                     self.reachable_spaces.append((y, x))
             self.numpy_maze.append(binary_row)
 
@@ -404,17 +400,15 @@ if __name__ == "__main__":
             if column == 0:
                 game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
 
-    for cookie_space in pacman_game.cookie_spaces:
-        translated = translate_maze_to_screen(cookie_space)
-        cookie = Cookie(game_renderer, translated[0] + unified_size / 2, translated[1] + unified_size / 2)
-        game_renderer.add_cookie(cookie)
-
     for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
         translated = translate_maze_to_screen(ghost_spawn)
         ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
                       pacman_game.ghost_colors[i % 4])
         game_renderer.add_ghost(ghost)
-
+    
+    #finishcoord = translate_maze_to_screen(pacman_game.finish_spawns)
+    #finishl = finish(game_renderer, finishcoord[0], finishcoord[1], unified_size)
+    #game_renderer.add_finish(finishl)
     pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
     game_renderer.add_hero(pacman)
     game_renderer.tick(120)
