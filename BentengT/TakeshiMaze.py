@@ -5,7 +5,7 @@ import numpy as np
 import tcod
 import random
 from enum import Enum
-from pacv1 import *
+from pac import *
 
 pygame.init()
 screen = pygame.display.set_mode((900, 700))
