@@ -1,414 +1,283 @@
 import pygame
+from sys import exit
+from random import randint
 import numpy as np
 import tcod
 import random
 from enum import Enum
+from pacv1 import *
+
+pygame.init()
+screen = pygame.display.set_mode((900, 700))
+title = pygame.display.set_caption('Takeshi-Maze')
+game_font = pygame.font.Font('font/Pixeltype.ttf', 56)
+game_font_little = pygame.font.Font('font/Pixeltype.ttf', 40)
+clock = pygame.time.Clock()
+
+game_active = False
+game_level = [False, False, False, False, False,False]
+game_outro = False
+
+# Intro
+title_surf = game_font.render('Takeshi-Maze', False, '#212121')
+title_rect = title_surf.get_rect(center = (450, 100))
+
+player_intro_surf = pygame.image.load('graphics/hero/hero_intro.png').convert_alpha()
+player_intro_rect = player_intro_surf.get_rect(center = (450,350))
+
+cmnd_surf = game_font.render('Press Space to Start', False, '#212121')
+cmnd_rect = cmnd_surf.get_rect(center = (450, 600))
+
+# Level 0
+sky_surf = pygame.image.load('graphics/sky.png').convert_alpha()
+ground_surf = pygame.image.load('graphics/ground.png').convert_alpha()
+
+player0_surf = pygame.image.load('graphics/hero/hero1.png')
+player0_surf = pygame.transform.scale2x(player0_surf)
+player0_rect = player0_surf.get_rect(midbottom = (80, 410))
+
+def jalankan(y):
+        unified_size = 32
+        pacman_game = PacmanGameController(2)
+        size = pacman_game.size
+        game_renderer = GameRenderer(size[0] * unified_size, size[1] * unified_size)
+
+        for y, row in enumerate(pacman_game.numpy_maze):
+            for x, column in enumerate(row):
+                if column == 0:
+                    game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
+
+        for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
+            translated = translate_maze_to_screen(ghost_spawn)
+            ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
+                        pacman_game.ghost_colors[i % 4])
+            game_renderer.add_ghost(ghost)
+        
+        finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
+        game_renderer.add_finish_line(finish_line)
+
+        pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
+        game_renderer.add_hero(pacman)
+        game_renderer.tick(120)
+        
+        if game_renderer._won == True:
+            game_level[y+1] =True
+            game_level[y] =False
 
 
-class Direction(Enum):
-    LEFT = 0
-    UP = 1
-    RIGHT = 2
-    DOWN = 3,
-    NONE = 4
+while True:
 
-def translate_screen_to_maze(in_coords, in_size=32):
-    return int(in_coords[0] / in_size), int(in_coords[1] / in_size)
-
-def translate_maze_to_screen(in_coords, in_size=32):
-    return in_coords[0] * in_size, in_coords[1] * in_size
-
-
-class GameObject:
-    def __init__(self, in_surface, x, y,
-                 in_size: int, in_color=(255, 0, 0),
-                 is_circle: bool = False):
-        self._size = in_size
-        self._renderer: GameRenderer = in_surface
-        self._surface = in_surface._screen
-        self.y = y
-        self._won = False
-        self.x = x
-        self._color = in_color
-        self._circle = is_circle
-        self._shape = pygame.Rect(self.x, self.y, in_size, in_size)
-
-    def draw(self):
-        if self._circle:
-            pygame.draw.circle(self._surface,
-                               self._color,
-                               (self.x, self.y),
-                               self._size)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
+        
+        if game_active:
+            if game_level[0]:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    game_level[1] = True
+                    game_level[0] = False
+            elif game_level[1]:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    game_level[2] = True
+                    game_level[1] = False
+            elif game_level[2]:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    game_level[3] = True
+                    game_level[2] = False
+            elif game_level[3]:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    game_level[3] = False
+                    game_level[4] = True
+            elif game_level[4]:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    game_level[4] = False
+                    game_level[5] = True
+            elif game_level[5]:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    player0_rect.x = -50
+                    game_outro = True
+                    game_level[5] = False
+            elif game_outro:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    game_outro = False
+                    game_active = False
         else:
-            rect_object = pygame.Rect(self.x, self.y, self._size, self._size)
-            pygame.draw.rect(self._surface,
-                             self._color,
-                             rect_object,
-                             border_radius=4)
-
-    def tick(self):
-        pass
-
-    def get_shape(self):
-        return pygame.Rect(self.x, self.y, self._size, self._size)
-
-    def set_position(self, in_x, in_y):
-        self.x = in_x
-        self.y = in_y
-
-    def get_position(self):
-        return (self.x, self.y)
-
-
-class Wall(GameObject):
-    def __init__(self, in_surface, x, y, in_size: int, in_color=(0, 150, 0)):
-        super().__init__(in_surface, x * in_size, y * in_size, in_size, in_color)
-
-class finish(GameObject):
-    def __init__(self, in_surface, x, y, in_size: int, in_color=(0, 150, 0)):
-        super().__init__(in_surface, x * in_size, y * in_size, in_size, in_color)
-
-
-class GameRenderer:
-    def __init__(self, in_width: int, in_height: int):
-        pygame.init()
-        self._width = in_width
-        self._height = in_height
-        self._screen = pygame.display.set_mode((in_width, in_height))
-        pygame.display.set_caption('Pacman')
-        self._clock = pygame.time.Clock()
-        self._done = False
-        self._won = False
-        self._game_objects = []
-        self._walls = []
-        self._finish = []
-        self._ghosts = []
-        self._hero: Hero = None
-
-    def tick(self, in_fps: int):
-        black = (59, 69, 43)
-        while not self._done:
-            for game_object in self._game_objects:
-                game_object.tick()
-                game_object.draw()
-
-
-            pygame.display.flip()
-            self._clock.tick(in_fps)
-            self._screen.fill(black)
-            self._handle_events()
-
-        print("Game over")
-
-    def add_game_object(self, obj: GameObject):
-        self._game_objects.append(obj)
-
-    def add_ghost(self, obj: GameObject):
-        self._game_objects.append(obj)
-        self._ghosts.append(obj)
-
-    def add_finish(self, obj: GameObject):
-        self._game_objects.append(obj)
-        self._finish.append(obj)
-
-    def set_won(self):
-        self._won = True
-
-    def get_won(self):
-        return self._won
-
-    def end_game(self):
-        if self._hero in self._game_objects:
-            self._game_objects.remove(self._hero)
-        self._hero = None
-
-    def kill_pacman(self):
-        self._hero.set_position(32, 32)
-        self._hero.set_direction(Direction.NONE)
-        self.end_game()
-
-    def add_wall(self, obj: Wall):
-        self.add_game_object(obj)
-        self._walls.append(obj)
-
-    def get_walls(self):
-        return self._walls
-
-    def get_ghosts(self):
-        return self._ghosts
-
-    def get_finish(self):
-        return self._finish
-
-    def get_game_objects(self):
-        return self._game_objects
-
-    def add_hero(self, in_hero):
-        self.add_game_object(in_hero)
-        self._hero = in_hero
-
-    def _handle_events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self._done = True
-
-        pressed = pygame.key.get_pressed()
-        if pressed[pygame.K_UP]:
-            self._hero.set_direction(Direction.UP)
-        elif pressed[pygame.K_LEFT]:
-            self._hero.set_direction(Direction.LEFT)
-        elif pressed[pygame.K_DOWN]:
-            self._hero.set_direction(Direction.DOWN)
-        elif pressed[pygame.K_RIGHT]:
-            self._hero.set_direction(Direction.RIGHT)
-
-
-class MovableObject(GameObject):
-    def __init__(self, in_surface, x, y, in_size: int, in_color=(255, 0, 0), is_circle: bool = False):
-        super().__init__(in_surface, x, y, in_size, in_color, is_circle)
-        self.current_direction = Direction.NONE
-        self.direction_buffer = Direction.NONE
-        self.last_working_direction = Direction.NONE
-        self.location_queue = []
-        self.next_target = None
-
-    def get_next_location(self):
-        return None if len(self.location_queue) == 0 else self.location_queue.pop(0)
-
-    def set_direction(self, in_direction):
-        self.current_direction = in_direction
-        self.direction_buffer = in_direction
-
-    def collides_with_wall(self, in_position):
-        collision_rect = pygame.Rect(in_position[0], in_position[1], self._size, self._size)
-        collides = False
-        walls = self._renderer.get_walls()
-        for wall in walls:
-            collides = collision_rect.colliderect(wall.get_shape())
-            if collides: break
-        return collides
-
-    def check_collision_in_direction(self, in_direction: Direction):
-        desired_position = (0, 0)
-        if in_direction == Direction.NONE: return False, desired_position
-        if in_direction == Direction.UP:
-            desired_position = (self.x, self.y - 1)
-        elif in_direction == Direction.DOWN:
-            desired_position = (self.x, self.y + 1)
-        elif in_direction == Direction.LEFT:
-            desired_position = (self.x - 1, self.y)
-        elif in_direction == Direction.RIGHT:
-            desired_position = (self.x + 1, self.y)
-
-        return self.collides_with_wall(desired_position), desired_position
-
-    def automatic_move(self, in_direction: Direction):
-        pass
-
-    def tick(self):
-        self.reached_target()
-        self.automatic_move(self.current_direction)
-
-    def reached_target(self):
-        pass
-
-
-class Hero(MovableObject):
-    def __init__(self, in_surface, x, y, in_size: int):
-        super().__init__(in_surface, x, y, in_size, (255, 255, 0), False)
-        self.last_non_colliding_position = (0, 0)
-
-    def tick(self):
-        # TELEPORT
-        if self.x < 0:
-            self.x = self._renderer._width
-
-        if self.x > self._renderer._width:
-            self.x = 0
-
-        self.last_non_colliding_position = self.get_position()
-
-        if self.check_collision_in_direction(self.direction_buffer)[0]:
-            self.automatic_move(self.current_direction)
-        else:
-            self.automatic_move(self.direction_buffer)
-            self.current_direction = self.direction_buffer
-
-        if self.collides_with_wall((self.x, self.y)):
-            self.set_position(self.last_non_colliding_position[0], self.last_non_colliding_position[1])
-
-        self.handle_ghosts()
-
-    def automatic_move(self, in_direction: Direction):
-        collision_result = self.check_collision_in_direction(in_direction)
-
-        desired_position_collides = collision_result[0]
-        if not desired_position_collides:
-            self.last_working_direction = self.current_direction
-            desired_position = collision_result[1]
-            self.set_position(desired_position[0], desired_position[1])
-        else:
-            self.current_direction = self.last_working_direction
-
-    def handle_finish(self):
-        collision_rect = pygame.Rect(self.x, self.y, self._size, self._size)
-        finish = self._renderer.get_finish()
-        game_objects = self._renderer.get_game_objects()
-        for finis in finish:
-            collides = collision_rect.colliderect(finish.get_shape())
-            if collides and finis in game_objects:
-                self._renderer.kill_pacman()
-
-
-    def handle_ghosts(self):
-        collision_rect = pygame.Rect(self.x, self.y, self._size, self._size)
-        ghosts = self._renderer.get_ghosts()
-        game_objects = self._renderer.get_game_objects()
-        for ghost in ghosts:
-            collides = collision_rect.colliderect(ghost.get_shape())
-            if collides and ghost in game_objects:
-                self._renderer.kill_pacman()
-
-    def draw(self):
-        half_size = self._size / 2
-        pygame.draw.circle(self._surface, self._color, (self.x + half_size, self.y + half_size), half_size)
-
-
-class Ghost(MovableObject):
-    def __init__(self, in_surface, x, y, in_size: int, in_game_controller, in_color=(0, 255, 0)):
-        super().__init__(in_surface, x, y, in_size, in_color, False)
-        self.game_controller = in_game_controller
-
-    def reached_target(self):
-        if (self.x, self.y) == self.next_target:
-            self.next_target = self.get_next_location()
-        self.current_direction = self.calculate_direction_to_next_target()
-
-    def set_new_path(self, in_path):
-        for item in in_path:
-            self.location_queue.append(item)
-        self.next_target = self.get_next_location()
-
-    def calculate_direction_to_next_target(self) -> Direction:
-        if self.next_target is None:
-            self.game_controller.request_new_random_path(self)
-            return Direction.NONE
-        diff_x = self.next_target[0] - self.x
-        diff_y = self.next_target[1] - self.y
-        if diff_x == 0:
-            return Direction.DOWN if diff_y > 0 else Direction.UP
-        if diff_y == 0:
-            return Direction.LEFT if diff_x < 0 else Direction.RIGHT
-        self.game_controller.request_new_random_path(self)
-        return Direction.NONE
-
-    def automatic_move(self, in_direction: Direction):
-        if in_direction == Direction.UP:
-            self.set_position(self.x, self.y - 1)
-        elif in_direction == Direction.DOWN:
-            self.set_position(self.x, self.y + 1)
-        elif in_direction == Direction.LEFT:
-            self.set_position(self.x - 1, self.y)
-        elif in_direction == Direction.RIGHT:
-            self.set_position(self.x + 1, self.y)
-
-class Pathfinder:
-    def __init__(self, in_arr):
-        cost = np.array(in_arr, dtype=np.bool_).tolist()
-        self.pf = tcod.path.AStar(cost=cost, diagonal=0)
-
-    def get_path(self, from_x, from_y, to_x, to_y) -> object:
-        res = self.pf.get_path(from_x, from_y, to_x, to_y)
-        return [(sub[1], sub[0]) for sub in res]
-
-
-class PacmanGameController:
-    def __init__(self):
-        self.ascii_maze = [
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "XP           XX            X",
-            "X XXXX XXXXX XX XXXXX XXXX X",
-            "X                          X",
-            "X XXXX XX XXXXXXXX XX XXXX X",
-            "X XXXX XX XXXXXXXX XX XXXX X",
-            "X      XX    XX    XX      X",
-            "XXXXXX XXXXX XX XXXXX XXXXXX",
-            "XXXXXX XX          XX XXXXXX",
-            "XXXXXX XX XXXXXXXX XX XXXXXX",
-            "XXXXXX XX X      X XX XXXXXX",
-            "             XX             ",
-            "XXXXXX XX X      X XX XXXXXX",
-            "XXXXXX XX XXXXXXXX XX XXXXXX",
-            "XXXXXX XX          XX XXXXXX",
-            "XXXXXX XX XXXXXXXX XX XXXXXX",
-            "X            XX            X",
-            "X XXXX XXXXX XX XXXXX XXXX X",
-            "X XXXX XXXXX XX XXXXX XXXX X",
-            "X   XX       G        XX   X",
-            "XXX XX XX XXXXXXXX XX XX XXX",
-            "X      XX    XX    XX      X",
-            "X XXXXXXXXXX XX XXXXXXXXXX X",
-            "X                         FX",
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-        ]
-
-        self.numpy_maze = []
-        self.reachable_spaces = []
-        self.ghost_spawns = []
-        self.finish_spawns = []
-        self.ghost_colors = [
-            (255, 184, 255),
-        ]
-        self.size = (0, 0)
-        self.convert_maze_to_numpy()
-        self.p = Pathfinder(self.numpy_maze)
-
-    def request_new_random_path(self, in_ghost: Ghost):
-        random_space = random.choice(self.reachable_spaces)
-        current_maze_coord = translate_screen_to_maze(in_ghost.get_position())
-
-        path = self.p.get_path(current_maze_coord[1], current_maze_coord[0], random_space[1],
-                               random_space[0])
-        test_path = [translate_maze_to_screen(item) for item in path]
-        in_ghost.set_new_path(test_path)
-
-    def convert_maze_to_numpy(self):
-        for x, row in enumerate(self.ascii_maze):
-            self.size = (len(row), x + 1)
-            binary_row = []
-            for y, column in enumerate(row):
-                if column == "F":
-                    self.finish_spawns.append((y, x))
-                if column == "G":
-                    self.ghost_spawns.append((y, x))
-                if column == "X":
-                    binary_row.append(0)
-                else:
-                    binary_row.append(1)
-                    self.reachable_spaces.append((y, x))
-            self.numpy_maze.append(binary_row)
-
-
-if __name__ == "__main__":
-    unified_size = 32
-    pacman_game = PacmanGameController()
-    size = pacman_game.size
-    game_renderer = GameRenderer(size[0] * unified_size, size[1] * unified_size)
-
-    for y, row in enumerate(pacman_game.numpy_maze):
-        for x, column in enumerate(row):
-            if column == 0:
-                game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
-
-    for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
-        translated = translate_maze_to_screen(ghost_spawn)
-        ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
-                      pacman_game.ghost_colors[i % 4])
-        game_renderer.add_ghost(ghost)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                game_active = True
+                game_level[0] = True
+                player0_rect.left = 80
     
-    #finishcoord = translate_maze_to_screen(pacman_game.finish_spawns)
-    #finishl = finish(game_renderer, finishcoord[0], finishcoord[1], unified_size)
-    #game_renderer.add_finish(finishl)
-    pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
-    game_renderer.add_hero(pacman)
-    game_renderer.tick(120)
+    if game_active:
+        # Game running
+        if game_level[0]:
+            command_surf = game_font.render('Hold "->" to go!', False, '#212121')
+            command_rect = command_surf.get_rect(center = (450, 100))
+            
+            screen.blit(sky_surf, (0,0))
+            screen.blit(ground_surf, (0, 410))
+            screen.blit(player0_surf, player0_rect)
+            screen.blit(command_surf, command_rect)
+
+            rigt_key = pygame.key.get_pressed()
+            if rigt_key[pygame.K_RIGHT]:
+                player0_rect.x += 5
+
+            if player0_rect.left > 910:
+                screen.fill('white')
+                level_surf = game_font.render('Level  1', False, '#212121')
+                level_rect = level_surf.get_rect(center = (450, 100))
+
+                screen.blit(level_surf, level_rect)
+                screen.blit(player_intro_surf, player_intro_rect)
+                screen.blit(cmnd_surf, cmnd_rect)
+        
+        if game_level[1]:
+            unified_size = 32
+            pacman_game = PacmanGameController(1)
+            size = pacman_game.size
+            game_renderer = GameRenderer(size[0] * unified_size, size[1] * unified_size)
+
+            for y, row in enumerate(pacman_game.numpy_maze):
+                for x, column in enumerate(row):
+                    if column == 0:
+                        game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
+
+            for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
+                translated = translate_maze_to_screen(ghost_spawn)
+                ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
+                            pacman_game.ghost_colors[i % 4])
+                game_renderer.add_ghost(ghost)
+            
+            finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
+            game_renderer.add_finish_line(finish_line)
+
+            pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
+            game_renderer.add_hero(pacman)
+            game_renderer.tick(120)
+            
+            if game_renderer._won == True and game_renderer._lives > 0:
+                game_level[2] =True
+                game_level[1] =False
+
+            if game_renderer._lives == 0:
+                game_level[0]=True
+                game_level[1]=False
+        
+        if game_level[2]:
+            screen.fill('white')
+            level_surf = game_font.render('Level  2', False, '#212121')
+            level_rect = level_surf.get_rect(center = (450, 100))
+
+            screen.blit(level_surf, level_rect)
+            screen.blit(player_intro_surf, player_intro_rect)
+            screen.blit(cmnd_surf, cmnd_rect)
+            
+        if game_level[3]:
+            unified_size = 32
+            pacman_game = PacmanGameController(2)
+            size = pacman_game.size
+            game_renderer = GameRenderer(size[0] * unified_size, size[1] * unified_size)
+
+            for y, row in enumerate(pacman_game.numpy_maze):
+                for x, column in enumerate(row):
+                    if column == 0:
+                        game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
+
+            for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
+                translated = translate_maze_to_screen(ghost_spawn)
+                ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
+                            pacman_game.ghost_colors[i % 4])
+                game_renderer.add_ghost(ghost)
+            
+            finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
+            game_renderer.add_finish_line(finish_line)
+
+            pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
+            game_renderer.add_hero(pacman)
+            game_renderer.tick(120)
+            
+            if game_renderer._won == True:
+                game_level[4] =True
+                game_level[3] =False
+
+            if game_renderer._lives == 0:
+                game_level[2]=True
+                game_level[3]=False
+            
+        if game_level[4]:
+            screen.fill('white')
+            level_surf = game_font.render('Level  3', False, '#212121')
+            level_rect = level_surf.get_rect(center = (450, 100))
+
+            screen.blit(level_surf, level_rect)
+            screen.blit(player_intro_surf, player_intro_rect)
+            screen.blit(cmnd_surf, cmnd_rect)
+        
+        if game_level[5]:
+            unified_size = 32
+            pacman_game = PacmanGameController(3)
+            size = pacman_game.size
+            game_renderer = GameRenderer(size[0] * unified_size, size[1] * unified_size)
+
+            for y, row in enumerate(pacman_game.numpy_maze):
+                for x, column in enumerate(row):
+                    if column == 0:
+                        game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
+
+            for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
+                translated = translate_maze_to_screen(ghost_spawn)
+                ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
+                            pacman_game.ghost_colors[i % 4])
+                game_renderer.add_ghost(ghost)
+            
+            finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
+            game_renderer.add_finish_line(finish_line)
+
+            pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
+            game_renderer.add_hero(pacman)
+            game_renderer.tick(120)
+            
+            if game_renderer._won == True:
+                game_outro = True
+                game_level[5] =False
+
+            if game_renderer._lives == 0:
+                game_level[4]=True
+                game_level[5]=False
+
+        if game_outro:
+            outro_surf = game_font.render('Congratulation!!!', False, '#212121')
+            outro_rect = outro_surf.get_rect(center = (450, 100))
+            outro_cmd_surf = game_font.render('Press space to continue!', False, '#212121')
+            outro_cmd_rect = outro_cmd_surf.get_rect(center = (450, 360))
+
+            name1_surf = game_font_little.render('- Dewangga Dika Darmawan (5025211109)', False, '#fafafa')
+            name1_rect = name1_surf.get_rect(midleft = (50, 550))
+            name2_surf = game_font_little.render('- Syukra Wahyu Ramadhan (5025211037)', False, '#fafafa')
+            name2_rect = name2_surf.get_rect(midleft = (50, 600))
+            name3_surf = game_font_little.render('- Javier Nararya Aqsa Setiyono (5025211245)', False, '#fafafa')
+            name3_rect = name3_surf.get_rect(midleft = (50, 650))
+
+            screen.blit(sky_surf, (0,0))
+            screen.blit(ground_surf, (0, 410))
+            screen.blit(outro_surf, outro_rect)
+            screen.blit(name1_surf, name1_rect)
+            screen.blit(name2_surf, name2_rect)
+            screen.blit(name3_surf, name3_rect)
+
+            screen.blit(player0_surf, player0_rect)
+            if player0_rect.left < 910:
+                player0_rect.x += 5
+            else:
+                screen.blit(outro_cmd_surf, outro_cmd_rect)    
+            
+    else:
+        # Main Menu
+        screen.fill('#fafafa')
+        screen.blit(title_surf, title_rect)
+        screen.blit(player_intro_surf, player_intro_rect)
+        screen.blit(cmnd_surf, cmnd_rect)
+    
+    pygame.display.update()
+    clock.tick(60)
