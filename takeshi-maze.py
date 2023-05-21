@@ -61,7 +61,7 @@ while True:
                     game_level[3] = False
                     player0_rect.x = -50
                     game_outro = True
-            elif game_outro and player0_rect.left > 910:
+            elif game_outro and player0_rect.left > 900:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                     game_outro = False
                     game_active = False
