@@ -4,7 +4,6 @@ import tcod
 import random
 from enum import Enum
 
-
 class Direction(Enum):
     DOWN = -90
     RIGHT = 0
@@ -15,10 +14,8 @@ class Direction(Enum):
 def translate_screen_to_maze(in_coords, in_size=32):
     return int(in_coords[0] / in_size), int(in_coords[1] / in_size)
 
-
 def translate_maze_to_screen(in_coords, in_size=32):
     return in_coords[0] * in_size, in_coords[1] * in_size
-
 
 class GameObject:
     def __init__(self, in_surface, x, y,
@@ -59,7 +56,6 @@ class GameObject:
     def get_position(self):
         return (self.x, self.y)
 
-
 class Wall(GameObject):
     def __init__(self, in_surface, x, y, in_size: int, in_color=(183,176,156)):
         super().__init__(in_surface, x * in_size, y * in_size, in_size, in_color)
@@ -74,7 +70,7 @@ class GameRenderer:
         self._width = in_width
         self._height = in_height
         self._screen = pygame.display.set_mode((in_width, in_height))
-        pygame.display.set_caption('Pacman')
+        pygame.display.set_caption('Takeshi-Maze')
         self._clock = pygame.time.Clock()
         self._done = False
         self._won = False
@@ -182,7 +178,6 @@ class GameRenderer:
         elif pressed[pygame.K_RIGHT]:
             self._hero.set_direction(Direction.RIGHT)
 
-
 class MovableObject(GameObject):
     def __init__(self, in_surface, x, y, in_size: int, in_color=(255, 0, 0), is_circle: bool = False):
         super().__init__(in_surface, x, y, in_size, in_color, is_circle)
@@ -237,7 +232,6 @@ class MovableObject(GameObject):
         self.image = pygame.transform.scale(self.image, (32, 32))
         self._surface.blit(self.image, self.get_shape())
 
-
 class Hero(MovableObject):
     def __init__(self, in_surface, x, y, in_size: int,):
         super().__init__(in_surface, x, y, in_size, (255, 255, 0), False)
@@ -245,7 +239,6 @@ class Hero(MovableObject):
         self.open = pygame.image.load("graphics/hero/hero_intro.png")
         self.image = self.open
         self.mouth_open = True
-
 
     def tick(self):
         # TELEPORT
@@ -300,7 +293,6 @@ class Hero(MovableObject):
         half_size = self._size / 2
         self.image = self.open
         super(Hero, self).draw()
-
 
 class Ghost(MovableObject):
     def __init__(self, in_surface, x, y, in_size: int, in_game_controller, sprite_path="graphics/monster/blue2.blue2.png"):
@@ -362,7 +354,6 @@ class Pathfinder:
     def get_path(self, from_x, from_y, to_x, to_y) -> object:
         res = self.pf.get_path(from_x, from_y, to_x, to_y)
         return [(sub[1], sub[0]) for sub in res]
-
 
 class PacmanGameController:
     def __init__(self, x ):
@@ -442,7 +433,7 @@ class PacmanGameController:
             "X   G                G     X",
             "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
         ]
-        if x == 1: self.ascii_maze =self.ascii_maze1
+        if x == 1: self.ascii_maze = self.ascii_maze1
         elif x == 2: self.ascii_maze = self.ascii_maze2
         elif x ==3 :self.ascii_maze = self.ascii_maze3
         self.numpy_maze = []
@@ -482,29 +473,3 @@ class PacmanGameController:
                     self.reachable_spaces.append((y, x))
 
             self.numpy_maze.append(binary_row)
-
-
-""" if __name__ == "__main__":
-    unified_size = 32
-    pacman_game = PacmanGameController()
-    size = pacman_game.size
-    game_renderer = GameRenderer(size[0] * unified_size, size[1] * unified_size)
-
-    for y, row in enumerate(pacman_game.numpy_maze):
-        for x, column in enumerate(row):
-            if column == 0:
-                game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
-
-    for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
-        translated = translate_maze_to_screen(ghost_spawn)
-        ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
-                      pacman_game.ghost_colors[i % 4])
-        game_renderer.add_ghost(ghost)
-    
-    finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
-    game_renderer.add_finish_line(finish_line)
-
-    pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
-    game_renderer.add_hero(pacman)
-    game_renderer.tick(120) """
-    
