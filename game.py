@@ -4,20 +4,20 @@ import tcod // impor untuk modul tcod (lib untuk model  roguelike)
 import random //mengimpor modul random yang menyediakan fungsi-fungsi untuk menghasilkan nomor acak dalam Python
 from enum import Enum //mengimpor class Enum(lib untuk jenis enumerasi) dari modul enum
 
-class Direction(Enum):
+class Direction(Enum): //membuat arah  dari class direction dengan nilai tertentu
     DOWN = -90
     RIGHT = 0
     UP = 90
     LEFT = 180
     NONE = 360
 
-def translate_screen_to_maze(in_coords, in_size=32):
+def translate_screen_to_maze(in_coords, in_size=32):// mengubah koordinat layar menjadi koordinat di dalam labirin 
     return int(in_coords[0] / in_size), int(in_coords[1] / in_size)
 
-def translate_maze_to_screen(in_coords, in_size=32):
+def translate_maze_to_screen(in_coords, in_size=32): //mengubah koordinat dalam labirin menjadi koordinat layar
     return in_coords[0] * in_size, in_coords[1] * in_size
 
-class GameObject:
+class GameObject:       // membuat objek permainan dengan atribut-atribut seperti ukuran, warna, dan bentuk objek.
     def __init__(self, in_surface, x, y,
                  in_size: int, in_color=(125, 25, 30),
                  is_circle: bool = False):
