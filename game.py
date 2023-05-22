@@ -284,30 +284,30 @@ class Hero(MovableObject): //merupakan konstruktor untuk objek Hero
         return collision_rect.colliderect(self._renderer._finish_line.get_shape()) //memeriksa tabrakan
 
 
-    def draw(self):
+    def draw(self): //menggambar objek Hero pada permukaan (surface) dengan menggunakan gambar yang telah ditentukan (self.open)
         half_size = self._size / 2
         self.image = self.open
         super(Hero, self).draw()
 
 class Ghost(MovableObject):
-    def __init__(self, in_surface, x, y, in_size: int, in_game_controller, sprite_path="graphics/monster/blue2.blue2.png"):
+    def __init__(self, in_surface, x, y, in_size: int, in_game_controller, sprite_path="graphics/monster/blue2.blue2.png"): //konstruktor untuk objek Ghost
         super().__init__(in_surface, x, y, in_size)
         self.game_controller = in_game_controller
         self.sprite_normal = pygame.image.load(sprite_path)
 
-    def reached_target(self):
+    def reached_target(self): //menentukan tindakan yang dilakukan saat objek Ghost mencapai target
         if (self.x, self.y) == self.next_target:
             self.next_target = self.get_next_location()
         self.current_direction = self.calculate_direction_to_next_target()
 
-    def set_new_path(self, in_path):
+    def set_new_path(self, in_path): //mengatur jalur baru (in_path) untuk objek Ghost
         for item in in_path:
             self.location_queue.append(item)
-        self.next_target = self.get_next_location()
+        self.next_target = self.get_next_location() //Jalur baru ditambahkan ke dalam location_queue, dan next_target diperbarui dengan memanggil self.get_next_location()
 
-    def calculate_direction_to_next_target(self) -> Direction:
+    def calculate_direction_to_next_target(self) -> Direction://menghitung arah yang harus diambil oleh objek Ghost menuju target berikutnya
         if self.next_target is None:
-            self.request_path_to_player(self)
+            self.request_path_to_player(self) //meminta jalur menuju pemain kepada pengontrol permainan (game_controller)
             return Direction.NONE
         diff_x = self.next_target[0] - self.x
         diff_y = self.next_target[1] - self.y
@@ -316,19 +316,19 @@ class Ghost(MovableObject):
         if diff_y == 0:
             return Direction.LEFT if diff_x < 0 else Direction.RIGHT
 
-        self.game_controller.request_new_random_path(self)
+        self.game_controller.request_new_random_path(self) //pengontrol permainan
         return Direction.NONE
 
-    def request_path_to_player(self, in_ghost):
+    def request_path_to_player(self, in_ghost): //meminta jalur menuju pemain kepada pengontrol permainan (game_controller)
         player_position = translate_screen_to_maze(in_ghost._renderer.get_hero_position())
         current_maze_coord = translate_screen_to_maze(in_ghost.get_position())
         path = self.game_controller.p.get_path(current_maze_coord[1], current_maze_coord[0], player_position[1],
                                                player_position[0])
 
         new_path = [translate_maze_to_screen(item) for item in path]
-        in_ghost.set_new_path(new_path)
+        in_ghost.set_new_path(new_path) //jalur baru
 
-    def automatic_move(self, in_direction: Direction):
+    def automatic_move(self, in_direction: Direction): //menggerakkan objek Ghost secara otomatis berdasarkan arah yang diberikan
         if in_direction == Direction.UP:
             self.set_position(self.x, self.y - 1)
         elif in_direction == Direction.DOWN:
@@ -337,18 +337,18 @@ class Ghost(MovableObject):
             self.set_position(self.x - 1, self.y)
         elif in_direction == Direction.RIGHT:
             self.set_position(self.x + 1, self.y)
-    def draw(self):
-        self.image = self.sprite_normal
+    def draw(self): // menggambar objek Ghost pada permukaan (surface) dengan menggunakan gambar normal (sprite_normal)
+        self.image = self.sprite_normal //berisi gambar untuk objek Ghost
         super(Ghost, self).draw()
 
-class Pathfinder:
+class Pathfinder: //konstruktor untuk objek Pathfinder. Pada konstruktor ini, dilakukan inisialisasi jalur dengan membangun objek tcod.path.AStar menggunakan cost yang diberikan
     def __init__(self, in_arr):
-        cost = np.array(in_arr, dtype=np.bool_).tolist()
-        self.pf = tcod.path.AStar(cost=cost, diagonal=0)
+        cost = np.array(in_arr, dtype=np.bool_).tolist() //Nilai cost diubah menjadi tipe data np.array dan kemudian diubah menjadi daftar
+        self.pf = tcod.path.AStar(cost=cost, diagonal=0) //A* untuk mencari jalur
 
-    def get_path(self, from_x, from_y, to_x, to_y) -> object:
-        res = self.pf.get_path(from_x, from_y, to_x, to_y)
-        return [(sub[1], sub[0]) for sub in res]
+    def get_path(self, from_x, from_y, to_x, to_y) -> object: //mendapatkan jalur dari titik awal (from_x, from_y) ke titik tujuan (to_x, to_y)
+        res = self.pf.get_path(from_x, from_y, to_x, to_y) //dipanggil dengan parameter yang diberikan
+        return [(sub[1], sub[0]) for sub in res]//. Hasil yang diperoleh kemudian diubah ke dalam format yang diharapkan, yaitu pasangan koordinat dalam bentuk (sub[1], sub[0]), dan kemudian dikembalikan sebagai objek jalur
 
 class PacmanGameController:
     def __init__(self, x ):
