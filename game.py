@@ -121,55 +121,55 @@ class GameRenderer: //menginisialisasi py game dengan beberapa argumen
     def get_hero_position(self):
         return self._hero.get_position() if self._hero != None else (0, 0)  //mendapatkan posisi char dalam bentuk koordinat (x, y) jika char ada. Jika char tidak ada, akan dikembalikan koordinat (0, 0)
 
-    def end_game(self):
+    def end_game(self): // mengakhiri permainan. Jika char (_hero) ada dalam daftar _game_objects, maka char tersebut dihapus dari daftar. Kemudian, variabel _hero diatur menjadi None
         if self._hero in self._game_objects:
             self._game_objects.remove(self._hero)
         self._hero = None
 
-    def kill_pacman(self):
+    def kill_pacman(self): // kill char dengan memanggil metode end_game()
         self.end_game()
 
-    def display_text(self, text, in_position=(32, 0), in_size=30):
-        font = pygame.font.SysFont('Arial', in_size)
+    def display_text(self, text, in_position=(32, 0), in_size=30): //menampilkan teks pada layar permainan
+        font = pygame.font.SysFont('Arial', in_size) //dirender menggunakan font Arial dengan bantuan modul pygame.font dan kemudian ditampilkan pada layar menggunakan self._screen.blit()
         text_surface = font.render(text, False, (255, 255, 255))
-        self._screen.blit(text_surface, in_position)
+        self._screen.blit(text_surface, in_position) //ditampilkan di screen
 
-    def add_wall(self, obj: Wall):
+    def add_wall(self, obj: Wall): //menambahkan objek Wall ke dalam permainan
         self.add_game_object(obj)
         self._walls.append(obj)
 
-    def get_walls(self):
+    def get_walls(self): //mendapatkan daftar objek Wall yang ada dalam permainan 
         return self._walls
 
-    def get_ghosts(self):
+    def get_ghosts(self): //mendapatkan daftar objek hantu (Ghost) yang ada dalam permainan
         return self._ghosts
 
-    def get_game_objects(self):
+    def get_game_objects(self): //mendapatkan daftar semua objek permainan
         return self._game_objects
 
-    def add_hero(self, in_hero):
+    def add_hero(self, in_hero): //menambahkan objek char (Hero) ke dalam permainan
         self.add_game_object(in_hero)
         self._hero = in_hero
 
-    def add_finish_line(self, obj: FinishLine):
+    def add_finish_line(self, obj: FinishLine): //menambahkan objek garis finish (FinishLine) ke dalam permainan
         self.add_game_object(obj)
         self._finish_line = obj
 
-    def _handle_events(self):
+    def _handle_events(self): // menangani event yang terjadi dalam permainan
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT: //permainan akan dihentikan dengan memanggil pygame.quit() dan exit()
                 pygame.quit()
                 exit()
 
-        pressed = pygame.key.get_pressed()
+        pressed = pygame.key.get_pressed() //memeriksa tombol yang ditekan oleh player menggunakan pygame.key.get_pressed(). Jika objek pahlawan (_hero) tidak ada, maka pemrosesan tombol dihentikan
         if self._hero is None: return
-        if pressed[pygame.K_UP]:
+        if pressed[pygame.K_UP]: //Jika tombol atas (pygame.K_UP) ditekan, arah char diatur menjadi Direction.UP
             self._hero.set_direction(Direction.UP)
-        elif pressed[pygame.K_LEFT]:
+        elif pressed[pygame.K_LEFT]: //Jika tombol kiri (pygame.K_LEFT) ditekan, arah char diatur menjadi Direction.LEFT
             self._hero.set_direction(Direction.LEFT)
-        elif pressed[pygame.K_DOWN]:
+        elif pressed[pygame.K_DOWN]: // Jika tombol bawah (pygame.K_DOWN) ditekan, arah char diatur menjadi Direction.DOWN
             self._hero.set_direction(Direction.DOWN)
-        elif pressed[pygame.K_RIGHT]:
+        elif pressed[pygame.K_RIGHT]: // Jika tombol kanan (pygame.K_RIGHT) ditekan, arah char diatur menjadi Direction.RIGHT
             self._hero.set_direction(Direction.RIGHT)
 
 class MovableObject(GameObject):
