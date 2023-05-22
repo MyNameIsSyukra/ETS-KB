@@ -350,8 +350,8 @@ class Pathfinder: //konstruktor untuk objek Pathfinder. Pada konstruktor ini, di
         res = self.pf.get_path(from_x, from_y, to_x, to_y) //dipanggil dengan parameter yang diberikan
         return [(sub[1], sub[0]) for sub in res]//. Hasil yang diperoleh kemudian diubah ke dalam format yang diharapkan, yaitu pasangan koordinat dalam bentuk (sub[1], sub[0]), dan kemudian dikembalikan sebagai objek jalur
 
-class PacmanGameController:
-    def __init__(self, x ):
+class PacmanGameController: //class yang berisi representasi labirin dalam bentuk string yang menggunakan karakter ASCII.
+    def __init__(self, x ): //digunakan untuk membangun labirin dalam permainan, dengan menggambar char ASCII tsb pada surface permainan.
         self.ascii_maze = []
         self.ascii_maze1 = [
             "X XXXXXXXXXXXXXXXXXXXXXXXXXX",
@@ -430,41 +430,41 @@ class PacmanGameController:
         ]
         if x == 1: self.ascii_maze = self.ascii_maze1
         elif x == 2: self.ascii_maze = self.ascii_maze2
-        elif x ==3 :self.ascii_maze = self.ascii_maze3
-        self.numpy_maze = []
-        self.reachable_spaces = []
-        self.ghost_spawns = []
-        self.ghost_colors = [
+        elif x ==3 :self.ascii_maze = self.ascii_maze3                                                                                                                                     
+        self.numpy_maze = [] // menyimpan labirin dalam bentuk numpy array 
+        self.reachable_spaces = [] //menyimpan daftar koordinat yang dapat dicapai di labirin. 
+        self.ghost_spawns = [] //menyimpan posisi awal ghost dalam labirin. 
+        self.ghost_colors = [ // berisi jalur file gambar untuk warna hantu.
             "graphics/monster/pink1.png",
             "graphics/monster/pink2.png",
             "graphics/monster/red1.png",
             "graphics/monster/red2.png"
         ]
-        self.size = (0, 0)
+        self.size = (0, 0) //menyimpan ukuran labirin dalam bentuk tupel (lebar, tinggi).
         self.convert_maze_to_numpy()
         self.p = Pathfinder(self.numpy_maze)
 
-    def request_new_random_path(self, in_ghost: Ghost):
-        random_space = random.choice(self.reachable_spaces)
-        current_maze_coord = translate_screen_to_maze(in_ghost.get_position())
-
+    def request_new_random_path(self, in_ghost: Ghost): //meminta jalur acak baru bagi objek Ghost
+        random_space = random.choice(self.reachable_spaces) //Mengambil secara acak sebuah titik yang dapat dicapai dari daftar reachable_spaces
+        current_maze_coord = translate_screen_to_maze(in_ghost.get_position()) //Mengambil posisi saat ini dari objek Ghost dengan menggunakan metode get_position(). Kemudian, mengubah posisi tersebut dari koordinat layar menjadi koordinat labirin menggunakan fungsi translate_screen_to_maze()
+//Menghitung jalur terpendek antara current_maze_coord (posisi saat ini) dan random_space (titik acak yang dapat dicapai) menggunakan objek Pathfinder yang disimpan dalam atribut p
         path = self.p.get_path(current_maze_coord[1], current_maze_coord[0], random_space[1],
-                               random_space[0])
-        test_path = [translate_maze_to_screen(item) for item in path]
-        in_ghost.set_new_path(test_path)
+                               random_space[0])//Jalur yang dihasilkan disimpan dalam test_path.
+        test_path = [translate_maze_to_screen(item) for item in path]//Mengubah jalur yang ditemukan dalam koordinat labirin menjadi koordinat layar menggunakan fungsi translate_maze_to_screen() untuk setiap elemen dalam daftar jalur. 
+        in_ghost.set_new_path(test_path) //Memanggil metode set_new_path() pada objek Ghost dengan test_path sebagai argumennya. Metode ini mengatur jalur baru untuk objek Ghost
 
-    def convert_maze_to_numpy(self):
-        for x, row in enumerate(self.ascii_maze):
-            self.size = (len(row), x + 1)
-            binary_row = []
-            for y, column in enumerate(row):
-                if column == "G":
+    def convert_maze_to_numpy(self):// untuk mengonversi labirin dalam bentuk ASCII menjadi numpy array.
+        for x, row in enumerate(self.ascii_maze): //Melakukan iterasi pada setiap baris dalam ascii_maze, sambil melacak indeks baris dengan variabel x
+            self.size = (len(row), x + 1) //Mengatur atribut size menjadi lebar dan tinggi labirin, dengan menggunakan panjang baris saat ini dan nilai x sebagai indeks terakhir baris.
+            binary_row = [] //Membuat sebuah daftar kosong binary_row untuk menyimpan nilai biner setiap kolom dalam baris.
+            for y, column in enumerate(row): //Melakukan iterasi pada setiap kolom dalam baris, sambil melacak indeks kolom dengan variabel y.
+                if column == "G": // menyimpan posisi awal hantu dalam labirin.
                     self.ghost_spawns.append((y, x))
 
-                if column == "X":
+                if column == "X": // Jika kolom saat ini adalah "X" (menandakan dinding), nilai 0 ditambahkan ke dalam binary_row.
                     binary_row.append(0)
                 else:
-                    binary_row.append(1)
+                    binary_row.append(1) // Jika kolom saat ini bukan "X" (menandakan area yang dapat dicapai), nilai 1 ditambahkan ke dalam binary_row. 
                     self.reachable_spaces.append((y, x))
 
-            self.numpy_maze.append(binary_row)
+            self.numpy_maze.append(binary_row)//Menambahkan binary_row ke dalam numpy_maze, sehingga membentuk representasi labirin dalam bentuk numpy array.
