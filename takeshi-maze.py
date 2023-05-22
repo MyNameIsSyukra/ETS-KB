@@ -130,7 +130,7 @@ while True:
                                     pacman_game.ghost_colors[i % 4])
                         game_renderer.add_ghost(ghost)
                     
-                    finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
+                    finish_line = FinishLine(game_renderer, size[0] - 2, size[1], unified_size)
                     game_renderer.add_finish_line(finish_line)
 
                     pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
@@ -181,7 +181,7 @@ while True:
                                     pacman_game.ghost_colors[i % 4])
                         game_renderer.add_ghost(ghost)
                     
-                    finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
+                    finish_line = FinishLine(game_renderer, size[0] - 2, size[1], unified_size)
                     game_renderer.add_finish_line(finish_line)
 
                     pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
@@ -232,7 +232,7 @@ while True:
                                     pacman_game.ghost_colors[i % 4])
                         game_renderer.add_ghost(ghost)
                     
-                    finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
+                    finish_line = FinishLine(game_renderer, size[0] - 2, size[1], unified_size)
                     game_renderer.add_finish_line(finish_line)
 
                     pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
