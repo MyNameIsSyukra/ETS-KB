@@ -172,7 +172,7 @@ class GameRenderer: //menginisialisasi py game dengan beberapa argumen
         elif pressed[pygame.K_RIGHT]: // Jika tombol kanan (pygame.K_RIGHT) ditekan, arah char diatur menjadi Direction.RIGHT
             self._hero.set_direction(Direction.RIGHT)
 
-class MovableObject(GameObject):
+class MovableObject(GameObject): //mewakili objek yang dapat bergerak dalam permainan
     def __init__(self, in_surface, x, y, in_size: int, in_color=(255, 0, 0), is_circle: bool = False):
         super().__init__(in_surface, x, y, in_size, in_color, is_circle)
         self.current_direction = Direction.NONE
@@ -182,25 +182,26 @@ class MovableObject(GameObject):
         self.next_target = None
         self.image = pygame.image.load('graphics/monster/blue1.png')
 
-    def get_next_location(self):
-        return None if len(self.location_queue) == 0 else self.location_queue.pop(0)
+    def get_next_location(self): //mendapatkan lokasi berikutnya dari objek yang dapat bergerak
+        return None if len(self.location_queue) == 0 else self.location_queue.pop(0) //mengembalikan None jika location_queue kosong atau menghapus dan mengembalikan elemen pertama dari location_queue jika tidak kosong
 
-    def set_direction(self, in_direction):
-        self.current_direction = in_direction
+    def set_direction(self, in_direction): //mengatur arah saat ini dan buffer arah dari objek yang dapat bergerak
+        self.current_direction = in_direction //menerima argumen in_direction yang merupakan arah yang ingin diatur
         self.direction_buffer = in_direction
 
-    def collides_with_wall(self, in_position):
-        collision_rect = pygame.Rect(in_position[0], in_position[1], self._size, self._size)
-        collides = False
+    def collides_with_wall(self, in_position): // memeriksa apakah objek yang dapat bergerak bertabrakan dengan dinding
+        collision_rect = pygame.Rect(in_position[0], in_position[1], self._size, self._size) //memeriksa tabrakan dengan menggunakan metode colliderect() dari objek pygame.Rect untuk memeriksa tabrakan antara collision_rect dan bentuk dinding
+        collides = False    //mengembalikan nilai True jika terjadi tabrakan dengan dinding, dan False jika tidak terjadi tabrakan
         walls = self._renderer.get_walls()
         for wall in walls:
             collides = collision_rect.colliderect(wall.get_shape())
             if collides: break
         return collides
 
-    def check_collision_in_direction(self, in_direction: Direction):
+    def check_collision_in_direction(self, in_direction: Direction): //memeriksa tabrakan dalam suatu arah tertentu
+        //menerima argumen in_direction yang merupakan arah yang ingin diperiksa. 
         desired_position = (0, 0)
-        if in_direction == Direction.NONE: return False, desired_position
+        if in_direction == Direction.NONE: return False, desired_position //memeriksa apakah terjadi tabrakan dengan dinding dalam posisi yang diinginkan
         if in_direction == Direction.UP:
             desired_position = (self.x, self.y - 1)
         elif in_direction == Direction.DOWN:
@@ -210,31 +211,31 @@ class MovableObject(GameObject):
         elif in_direction == Direction.RIGHT:
             desired_position = (self.x + 1, self.y)
 
-        return self.collides_with_wall(desired_position), desired_position
+        return self.collides_with_wall(desired_position), desired_position //mengembalikan tuple yang terdiri dari nilai True jika terjadi tabrakan, dan desired_position yang merupakan posisi yang diinginkan
 
-    def automatic_move(self, in_direction: Direction):
+    def automatic_move(self, in_direction: Direction): //menggerakkan objek yang dapat bergerak secara otomatis
         pass
 
-    def tick(self):
+    def tick(self): // mengatur tindakan yang dilakukan pada setiap iterasi permainan. Metode ini memanggil reached_target() dan automatic_move(self
         self.reached_target()
         self.automatic_move(self.current_direction)
 
-    def reached_target(self):
+    def reached_target(self): // reached_target() digunakan untuk menangani saat objek mencapai target tertentu
         pass
     
-    def draw(self):
+    def draw(self): //menggambar objek pada layar permainan. Pertama, gambar objek diubah ukurannya menggunakan pygame.transform.scale(self.image, (32, 32)) agar sesuai dengan ukuran yang diinginkan
         self.image = pygame.transform.scale(self.image, (32, 32))
-        self._surface.blit(self.image, self.get_shape())
+        self._surface.blit(self.image, self.get_shape()) //gambar tersebut ditampilkan pada permukaan objek menggunakan self._surface.blit(self.image, self.get_shape())
 
-class Hero(MovableObject):
+class Hero(MovableObject): //merupakan konstruktor untuk objek Hero
     def __init__(self, in_surface, x, y, in_size: int,):
-        super().__init__(in_surface, x, y, in_size, (255, 255, 0), False)
+        super().__init__(in_surface, x, y, in_size, (255, 255, 0), False) //melakukan inisialisasi objek dengan parameter yang diberikan
         self.last_non_colliding_position = (0, 0)
         self.open = pygame.image.load("graphics/hero/hero_intro.png")
         self.image = self.open
         self.mouth_open = True
 
-    def tick(self):
+    def tick(self): //mengatur tindakan yang dilakukan pada setiap iterasi permainan oleh objek Hero
         # TELEPORT
         if self.x < 0:
             self.x = self._renderer._width
@@ -242,11 +243,11 @@ class Hero(MovableObject):
         if self.x > self._renderer._width:
             self.x = 0
 
-        self.last_non_colliding_position = self.get_position()
+        self.last_non_colliding_position = self.get_position() //diatur sebagai posisi saat ini menggunakan self.get_position()
 
         if self.check_collision_in_direction(self.direction_buffer)[0]:
-            self.automatic_move(self.current_direction)
-        else:
+            self.automatic_move(self.current_direction) //menggerakkan objek sesuai dengan arah saat ini (current_direction)
+        else: //Jika tidak terjadi tabrakan, automatic_move(self.direction_buffer) dipanggil untuk menggerakkan objek sesuai dengan arah yang diinginkan (direction_buffer), dan current_direction diatur sama dengan direction_buffer
             self.automatic_move(self.direction_buffer)
             self.current_direction = self.direction_buffer
 
@@ -258,29 +259,29 @@ class Hero(MovableObject):
 
         self.handle_ghosts()
 
-    def automatic_move(self, in_direction: Direction):
-        collision_result = self.check_collision_in_direction(in_direction)
+    def automatic_move(self, in_direction: Direction): //menggerakkan objek Hero secara otomatis dalam arah yang ditentukan
+        collision_result = self.check_collision_in_direction(in_direction) //diinisialisasi dengan hasil dari pemanggilan check_collision_in_direction(in_direction)
 
-        desired_position_collides = collision_result[0]
+        desired_position_collides = collision_result[0] //desired_position_collides diambil dari indeks 0 dari collision_result, yang menunjukkan apakah terjadi tabrakan dengan dinding dalam posisi yang diinginkan
         if not desired_position_collides:
             self.last_working_direction = self.current_direction
             desired_position = collision_result[1]
-            self.set_position(desired_position[0], desired_position[1])
+            self.set_position(desired_position[0], desired_position[1]) // Jika tidak terjadi tabrakan, last_working_direction diatur sama dengan current_direction. desired_position diambil dari indeks 1 dari collision_result, yang merupakan posisi yang diinginkan
         else:
-            self.current_direction = self.last_working_direction
+            self.current_direction = self.last_working_direction //Jika terjadi tabrakan, current_direction diatur sama dengan last_working_direction
 
-    def handle_ghosts(self):
+    def handle_ghosts(self): //menangani tabrakan antara objek Hero dengan objek hantu (ghosts)
         collision_rect = pygame.Rect(self.x, self.y, self._size, self._size)
-        ghosts = self._renderer.get_ghosts()
+        ghosts = self._renderer.get_ghosts() // objek-objek hantu (ghosts) diambil dari renderer 
         game_objects = self._renderer.get_game_objects()
         for ghost in ghosts:
-            collides = collision_rect.colliderect(ghost.get_shape())
+            collides = collision_rect.colliderect(ghost.get_shape()) //untuk memeriksa tabrakan
             if collides and ghost in game_objects:
                 self._renderer.kill_pacman()
 
-    def collides_with_finish_line(self):
+    def collides_with_finish_line(self): //memeriksa tabrakan antara objek Hero dengan garis finish (_finish_line)
         collision_rect = pygame.Rect(self.x, self.y, self._size, self._size)
-        return collision_rect.colliderect(self._renderer._finish_line.get_shape())
+        return collision_rect.colliderect(self._renderer._finish_line.get_shape()) //memeriksa tabrakan
 
 
     def draw(self):
