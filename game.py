@@ -56,16 +56,16 @@ class GameObject:       // membuat objek permainan dengan atribut-atribut sepert
     def get_position(self):
         return (self.x, self.y)
 
-class Wall(GameObject):
-    def __init__(self, in_surface, x, y, in_size: int, in_color=(183,176,156)):
-        super().__init__(in_surface, x * in_size, y * in_size, in_size, in_color)
+class Wall(GameObject): //membuat objek dinding dalam permainan 
+    def __init__(self, in_surface, x, y, in_size: int, in_color=(183,176,156)): 
+        super().__init__(in_surface, x * in_size, y * in_size, in_size, in_color) //panggil konstruktor Gameobject dengan super() lalu set ukuran dan set warna wall
 
-class FinishLine(GameObject):
+class FinishLine(GameObject): //membuat garis finish game
     def __init__(self, in_surface, x, y, in_size: int, in_color=(0, 255, 0)):
-        super().__init__(in_surface, x * in_size, y * in_size, in_size, in_color)
+        super().__init__(in_surface, x * in_size, y * in_size, in_size, in_color) //panggil konstruktor GameObject dengan super() lalu setting ukuran garis finis dan warnanya
 
-class GameRenderer:
-    def __init__(self, in_width: int, in_height: int, lives: int):
+class GameRenderer: //menginisialisasi py game dengan beberapa argumen
+    def __init__(self, in_width: int, in_height: int, lives: int):  //Konstruktor yg menerima 3 parameter in_width (lebar layar game), in_height (tinggi layar game), dan lives (jumlah nyawa char)
         pygame.init()
         self._width = in_width
         self._height = in_height
@@ -84,7 +84,7 @@ class GameRenderer:
         self._pakupaku_event = pygame.USEREVENT + 3
 
 
-    def tick(self, in_fps: int):
+    def tick(self, in_fps: int):    //menggerakkan permainan dengan kecepatan frame per detik (fps)
         black = (59, 69, 43)
 
         #self.handle_mode_switch()
@@ -92,34 +92,34 @@ class GameRenderer:
         while not self._done:
             for game_object in self._game_objects:
                 game_object.tick()
-                game_object.draw()
+                game_object.draw() //setiap objek permainan akan digambar
 
-            self.display_text(f"[Lives: {self._lives}]")
+            self.display_text(f"[Lives: {self._lives}]")    //menampilkan nyawa char
 
             if self._hero is None: 
                 self._done = True
             if self.get_won(): 
                 self._done = True
-            pygame.display.flip()
-            self._clock.tick(in_fps)
-            self._screen.fill(black)
-            self._handle_events()
+            pygame.display.flip() //melakukan refresh screen
+            self._clock.tick(in_fps) //mengatur waktu game
+            self._screen.fill(black) //mewarnai screen dengan warna hitam
+            self._handle_events() //menangani input yang diberikan dari player
 
-    def add_game_object(self, obj: GameObject):
+    def add_game_object(self, obj: GameObject): //menambahkan objek permainan ke dalam daftar self._game_objects
         self._game_objects.append(obj)
 
-    def add_ghost(self, obj: GameObject):
+    def add_ghost(self, obj: GameObject):   //menambahkan objek hantu ke dalam daftar self._game_objects dan self._ghosts
         self._game_objects.append(obj)
         self._ghosts.append(obj)
 
-    def set_won(self):
+    def set_won(self):  //menandai bahwa pemain telah memenangkan permainan dengan mengatur nilai atribut self._won menjadi True
         self._won = True
 
-    def get_won(self):
+    def get_won(self): //menentukan apakah permainan telah dimenangkan atau belum
         return self._won
 
     def get_hero_position(self):
-        return self._hero.get_position() if self._hero != None else (0, 0)
+        return self._hero.get_position() if self._hero != None else (0, 0)  //mendapatkan posisi char dalam bentuk koordinat (x, y) jika char ada. Jika char tidak ada, akan dikembalikan koordinat (0, 0)
 
     def end_game(self):
         if self._hero in self._game_objects:
