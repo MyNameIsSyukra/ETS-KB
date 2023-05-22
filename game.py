@@ -1,8 +1,8 @@
-import pygame
-import numpy as np
-import tcod
-import random
-from enum import Enum
+import pygame   //mengimpor modul pygame ( lib penyedia pengelolaan grafik ,sound, dll untuk pembuatan apliaksi dan game)
+import numpy as np //mengimpor modul numpy dan memberikan aliasnya sebagai np // lib yang menyediakan struktur data
+import tcod // impor untuk modul tcod (lib untuk model  roguelike)
+import random //mengimpor modul random yang menyediakan fungsi-fungsi untuk menghasilkan nomor acak dalam Python
+from enum import Enum //mengimpor class Enum(lib untuk jenis enumerasi) dari modul enum
 
 class Direction(Enum):
     DOWN = -90
