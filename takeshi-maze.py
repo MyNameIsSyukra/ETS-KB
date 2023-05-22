@@ -15,6 +15,7 @@ game_active = False
 game_level = [False, False, False, False]
 game_outro = False
 game_won = False
+game_lives = 3
 
 # Intro
 title_surf = game_font.render('Takeshi-Maze', False, '#212121')
@@ -47,20 +48,35 @@ while True:
                     game_level[0] = False
             elif game_level[1]:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    game_won = False
-                    game_level[2] = True
-                    game_level[1] = False
+                    if game_lives > 0:
+                        game_won = False
+                        game_level[2] = True
+                        game_level[1] = False
+                    else:
+                        game_level[1] = False
+                        game_active = False
+                        game_lives = 3
             elif game_level[2]:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    game_won = False
-                    game_level[3] = True
-                    game_level[2] = False
+                    if game_lives > 0:
+                        game_won = False
+                        game_level[3] = True
+                        game_level[2] = False
+                    else:
+                        game_level[2] = False
+                        game_active = False
+                        game_lives = 3
             elif game_level[3]:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    game_won = False
-                    game_level[3] = False
-                    player0_rect.x = -50
-                    game_outro = True
+                    if game_lives > 0:
+                        game_won = False
+                        game_level[3] = False
+                        player0_rect.x = -50
+                        game_outro = True
+                    else:
+                        game_level[3] = False
+                        game_active = False
+                        game_lives = 3
             elif game_outro and player0_rect.left > 900:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                     game_outro = False
@@ -97,35 +113,45 @@ while True:
         
         if game_level[1]:
             if game_won == False:
-                unified_size = 32
-                pacman_game = PacmanGameController(1)
-                size = pacman_game.size
-                game_renderer = GameRenderer(size[0] * unified_size, size[1] * unified_size)
+                if game_lives > 0:
+                    unified_size = 32
+                    pacman_game = PacmanGameController(1)
+                    size = pacman_game.size
+                    game_renderer = GameRenderer(size[0] * unified_size, size[1] * unified_size, game_lives)
 
-                for y, row in enumerate(pacman_game.numpy_maze):
-                    for x, column in enumerate(row):
-                        if column == 0:
-                            game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
+                    for y, row in enumerate(pacman_game.numpy_maze):
+                        for x, column in enumerate(row):
+                            if column == 0:
+                                game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
 
-                for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
-                    translated = translate_maze_to_screen(ghost_spawn)
-                    ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
-                                pacman_game.ghost_colors[i % 4])
-                    game_renderer.add_ghost(ghost)
-                
-                finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
-                game_renderer.add_finish_line(finish_line)
+                    for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
+                        translated = translate_maze_to_screen(ghost_spawn)
+                        ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
+                                    pacman_game.ghost_colors[i % 4])
+                        game_renderer.add_ghost(ghost)
+                    
+                    finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
+                    game_renderer.add_finish_line(finish_line)
 
-                pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
-                game_renderer.add_hero(pacman)
-                game_renderer.tick(120)
-                
-                if game_renderer._won == True and game_renderer._lives > 0:
-                    game_won = True
+                    pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
+                    game_renderer.add_hero(pacman)
+                    game_renderer.tick(120)
 
-                if game_renderer._lives == 0:
-                    game_level[1] = False
-                    game_active = False
+                    if game_renderer.kill_pacman and game_lives > 0 and game_renderer._won == False:
+                        game_lives -= 1
+                    
+                    if game_renderer._won:
+                        game_won = True
+
+                else:
+                    screen.fill('#212121')
+                    game_over = game_font.render('Game Over :(', False, '#ffffff')
+                    game_over_rect = game_over.get_rect(center = (448, 363))
+                    over_surf = game_font.render('Press space to continue!', False, '#ffffff')
+                    over_rect = over_surf.get_rect(center = (448, 620))
+
+                    screen.blit(game_over, game_over_rect)
+                    screen.blit(over_surf, over_rect)
             
             else:
                 screen.fill('white')
@@ -138,35 +164,45 @@ while True:
         
         if game_level[2]:
             if game_won == False:
-                unified_size = 32
-                pacman_game = PacmanGameController(2)
-                size = pacman_game.size
-                game_renderer = GameRenderer(size[0] * unified_size, size[1] * unified_size)
+                if game_lives > 0:
+                    unified_size = 32
+                    pacman_game = PacmanGameController(2)
+                    size = pacman_game.size
+                    game_renderer = GameRenderer(size[0] * unified_size, size[1] * unified_size, game_lives)
 
-                for y, row in enumerate(pacman_game.numpy_maze):
-                    for x, column in enumerate(row):
-                        if column == 0:
-                            game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
+                    for y, row in enumerate(pacman_game.numpy_maze):
+                        for x, column in enumerate(row):
+                            if column == 0:
+                                game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
 
-                for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
-                    translated = translate_maze_to_screen(ghost_spawn)
-                    ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
-                                pacman_game.ghost_colors[i % 4])
-                    game_renderer.add_ghost(ghost)
-                
-                finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
-                game_renderer.add_finish_line(finish_line)
+                    for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
+                        translated = translate_maze_to_screen(ghost_spawn)
+                        ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
+                                    pacman_game.ghost_colors[i % 4])
+                        game_renderer.add_ghost(ghost)
+                    
+                    finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
+                    game_renderer.add_finish_line(finish_line)
 
-                pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
-                game_renderer.add_hero(pacman)
-                game_renderer.tick(120)
-                
-                if game_renderer._won == True and game_renderer._lives > 0:
-                    game_won = True
+                    pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
+                    game_renderer.add_hero(pacman)
+                    game_renderer.tick(120)
 
-                if game_renderer._lives == 0:
-                    game_level[2] = False
-                    game_active = False
+                    if game_renderer.kill_pacman and game_lives > 0 and game_renderer._won == False:
+                        game_lives -= 1
+                    
+                    if game_renderer._won:
+                        game_won = True
+
+                else:
+                    screen.fill('#212121')
+                    game_over = game_font.render('Game Over :(', False, '#ffffff')
+                    game_over_rect = game_over.get_rect(center = (448, 363))
+                    over_surf = game_font.render('Press space to continue!', False, '#ffffff')
+                    over_rect = over_surf.get_rect(center = (448, 620))
+
+                    screen.blit(game_over, game_over_rect)
+                    screen.blit(over_surf, over_rect)
             
             else:
                 screen.fill('white')
@@ -179,43 +215,55 @@ while True:
             
         if game_level[3]:
             if game_won == False:
-                unified_size = 32
-                pacman_game = PacmanGameController(3)
-                size = pacman_game.size
-                game_renderer = GameRenderer(size[0] * unified_size, size[1] * unified_size)
+                if game_lives > 0:
+                    unified_size = 32
+                    pacman_game = PacmanGameController(3)
+                    size = pacman_game.size
+                    game_renderer = GameRenderer(size[0] * unified_size, size[1] * unified_size, game_lives)
 
-                for y, row in enumerate(pacman_game.numpy_maze):
-                    for x, column in enumerate(row):
-                        if column == 0:
-                            game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
+                    for y, row in enumerate(pacman_game.numpy_maze):
+                        for x, column in enumerate(row):
+                            if column == 0:
+                                game_renderer.add_wall(Wall(game_renderer, x, y, unified_size))
 
-                for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
-                    translated = translate_maze_to_screen(ghost_spawn)
-                    ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
-                                pacman_game.ghost_colors[i % 4])
-                    game_renderer.add_ghost(ghost)
-                
-                finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
-                game_renderer.add_finish_line(finish_line)
+                    for i, ghost_spawn in enumerate(pacman_game.ghost_spawns):
+                        translated = translate_maze_to_screen(ghost_spawn)
+                        ghost = Ghost(game_renderer, translated[0], translated[1], unified_size, pacman_game,
+                                    pacman_game.ghost_colors[i % 4])
+                        game_renderer.add_ghost(ghost)
+                    
+                    finish_line = FinishLine(game_renderer, size[0] - 2, size[1] - 2, unified_size)
+                    game_renderer.add_finish_line(finish_line)
 
-                pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
-                game_renderer.add_hero(pacman)
-                game_renderer.tick(120)
-                
-                if game_renderer._won == True and game_renderer._lives > 0:
-                    game_won = True
+                    pacman = Hero(game_renderer, unified_size, unified_size, unified_size)
+                    game_renderer.add_hero(pacman)
+                    game_renderer.tick(120)
 
-                if game_renderer._lives == 0:
-                    game_level[3] = False
-                    game_active = False
+                    if game_renderer.kill_pacman and game_lives > 0 and game_renderer._won == False:
+                        game_lives -= 1
+                    
+                    if game_renderer._won:
+                        game_won = True
+
+                else:
+                    screen.fill('#212121')
+                    game_over = game_font.render('Game Over :(', False, '#ffffff')
+                    game_over_rect = game_over.get_rect(center = (448, 363))
+                    over_surf = game_font.render('Press space to continue!', False, '#ffffff')
+                    over_rect = over_surf.get_rect(center = (448, 620))
+
+                    screen.blit(game_over, game_over_rect)
+                    screen.blit(over_surf, over_rect)
             
             else:
                 screen.fill('#212121')
                 level_surf = game_font.render('CONGRATULATION!!!', False, '#ffffff')
                 level_rect = level_surf.get_rect(center = (448, 363))
+                congrat_surf = game_font.render('Press space to continue!', False, '#ffffff')
+                congrat_rect = congrat_surf.get_rect(center = (448, 620))
 
                 screen.blit(level_surf, level_rect)
-                screen.blit(cmnd_surf, cmnd_rect)
+                screen.blit(congrat_surf, congrat_rect)
 
         if game_outro:
             outro_surf = game_font.render('Thank You', False, '#212121')

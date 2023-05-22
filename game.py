@@ -65,7 +65,7 @@ class FinishLine(GameObject):
         super().__init__(in_surface, x * in_size, y * in_size, in_size, in_color)
 
 class GameRenderer:
-    def __init__(self, in_width: int, in_height: int):
+    def __init__(self, in_width: int, in_height: int, lives: int):
         pygame.init()
         self._width = in_width
         self._height = in_height
@@ -78,7 +78,7 @@ class GameRenderer:
         self._walls = []
         self._ghosts = []
         self._hero: Hero = None
-        self._lives = 3
+        self._lives = lives
         self._score = 0
         self._finish_line = None
         self._pakupaku_event = pygame.USEREVENT + 3
@@ -97,16 +97,13 @@ class GameRenderer:
             self.display_text(f"[Lives: {self._lives}]")
 
             if self._hero is None: 
-                self.display_text("YOU DIED", (self._width / 2 - 256, self._height / 2 - 256), 100)
                 self._done = True
             if self.get_won(): 
-                self.display_text("YOU WON", (self._width / 2 - 256, self._height / 2 - 256), 100)
                 self._done = True
             pygame.display.flip()
             self._clock.tick(in_fps)
             self._screen.fill(black)
             self._handle_events()
-        print("Game over")
 
     def add_game_object(self, obj: GameObject):
         self._game_objects.append(obj)
@@ -130,10 +127,7 @@ class GameRenderer:
         self._hero = None
 
     def kill_pacman(self):
-        self._lives -= 1
-        self._hero.set_position(32, 32)
-        self._hero.set_direction(Direction.NONE)
-        if self._lives == 0: self.end_game()
+        self.end_game()
 
     def display_text(self, text, in_position=(32, 0), in_size=30):
         font = pygame.font.SysFont('Arial', in_size)
